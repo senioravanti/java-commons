@@ -6,7 +6,6 @@ import org.apache.logging.log4j.core.config.Node;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.core.layout.AbstractStringLayout;
-import org.apache.logging.log4j.message.MapMessage;
 
 import tools.jackson.core.util.DefaultPrettyPrinter;
 import tools.jackson.core.util.Separators;
@@ -78,8 +77,10 @@ public class PrettyStructuredLoggingFormatter extends AbstractStringLayout {
     @Override
     public String toSerializable(LogEvent evt) {
         var jsonEntry = new StringBuilder();
+        // timestamp
         jsonEntry.append(colorize(AnsiColors.LIGHT_GRAY.getCode(), "[%s]".formatted(LocalDateTime.ofInstant(Instant.ofEpochMilli(evt.getTimeMillis()), ZoneId.systemDefault()).format(TIMESTAMP_FORMATTER))));
         jsonEntry.append(" ");
+        // level
         var level = evt.getLevel().name();
         var levelColor = switch (level) {
             case "DEBUG" -> AnsiColors.LIGHT_BLUE;
@@ -90,17 +91,20 @@ public class PrettyStructuredLoggingFormatter extends AbstractStringLayout {
         };
         jsonEntry.append(colorize(levelColor.getCode(), level));
         jsonEntry.append(" ");
+        // context
         var src = evt.getSource();
+        jsonEntry.append(colorize(AnsiColors.GREEN.getCode(), "<%s> %s#%s:%d".formatted(evt.getThreadName(), src.getClassName(), src.getMethodName(), src.getLineNumber())));
+        jsonEntry.append(" ");
+        // structured message
         var msg = evt.getMessage();
         var structuredMessage = new LinkedHashMap<String, Object>();
-        if (msg instanceof MapMessage<?, ?> mapMessage) {
-            structuredMessage.putAll(mapMessage.getData());
+        if (msg instanceof CustomMapMessage customMapMessage) {
+            structuredMessage.putAll(customMapMessage.toMap());
         } else {
             structuredMessage.put("msg", msg.getFormattedMessage());
         }
-        structuredMessage.putAll(evt.getContextData().toMap());
-        jsonEntry.append(colorize(AnsiColors.GREEN.getCode(), "<%s> %s#%s:%d".formatted(evt.getThreadName(), src.getClassName(), src.getMethodName(), src.getLineNumber())));
-        jsonEntry.append(" ");
+        var mdc = evt.getContextData().toMap();
+        if (!mdc.isEmpty()) structuredMessage.put("mdc", mdc);
         jsonEntry.append(JSON
             .writerWithDefaultPrettyPrinter()
             .writeValueAsString(structuredMessage));

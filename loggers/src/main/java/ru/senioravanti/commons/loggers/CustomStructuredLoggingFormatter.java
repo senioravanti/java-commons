@@ -6,7 +6,6 @@ import org.apache.logging.log4j.core.config.Node;
 import org.apache.logging.log4j.core.config.plugins.Plugin;
 import org.apache.logging.log4j.core.config.plugins.PluginFactory;
 import org.apache.logging.log4j.core.layout.AbstractStringLayout;
-import org.apache.logging.log4j.message.MapMessage;
 
 import tools.jackson.databind.json.JsonMapper;
 
@@ -37,14 +36,14 @@ public class CustomStructuredLoggingFormatter extends AbstractStringLayout {
     }
 
     @Override
-    public String toSerializable(LogEvent event) {
-        var logEntry = new LinkedHashMap<String, Object>(event.getContextData().toMap());
+    public String toSerializable(LogEvent evt) {
+        var logEntry = new LinkedHashMap<String, Object>(evt.getContextData().toMap());
 
-        logEntry.put("time", LocalDateTime.ofInstant(Instant.ofEpochMilli(event.getInstant().getEpochMillisecond()), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
-        logEntry.put("level", event.getLevel().name());
-        logEntry.put("thread", event.getThreadName());
+        logEntry.put("time", LocalDateTime.ofInstant(Instant.ofEpochMilli(evt.getInstant().getEpochMillisecond()), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
+        logEntry.put("level", evt.getLevel().name());
+        logEntry.put("thread", evt.getThreadName());
 
-        var source = event.getSource();
+        var source = evt.getSource();
         Map<String, Object> sourceMap;
         if (source != null) {
             sourceMap = new LinkedHashMap<>();
@@ -56,17 +55,16 @@ public class CustomStructuredLoggingFormatter extends AbstractStringLayout {
         }
         logEntry.put("source", sourceMap);
 
-        var mdc = event.getContextData().toMap();
-        if (!mdc.isEmpty()) {
-            logEntry.putAll(mdc);
+        var msg = evt.getMessage();
+        if (msg instanceof CustomMapMessage customMapMessage) {
+            logEntry.putAll(customMapMessage.toMap());
+        } else {
+            logEntry.put("message", evt.getMessage() != null ? evt.getMessage().getFormattedMessage() : "");
         }
 
-        var msg = event.getMessage();
-        if (msg instanceof MapMessage<?, ?> mapMessage) {
-            logEntry.putAll(mapMessage.getData());
-        } else {
-            logEntry.put("message", event.getMessage() != null ? event.getMessage().getFormattedMessage() : "");
-        }
+        var mdc = evt.getContextData().toMap();
+        if (!mdc.isEmpty()) logEntry.put("mdc", mdc);
+
         return objectMapper.writeValueAsString(logEntry) + "\n";
     }
 }

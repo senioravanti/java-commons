@@ -1,7 +1,5 @@
 package ru.senioravanti.commons.loggers;
 
-import ru.senioravanti.commons.loggers.LoggersConfigHolder;
-
 import java.util.ArrayList;
 import java.util.List;
 
