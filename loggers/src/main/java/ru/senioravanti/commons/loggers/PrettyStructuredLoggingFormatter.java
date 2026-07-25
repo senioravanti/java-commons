@@ -19,6 +19,11 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 
+/*
+[25.07.2026, 12:01:56] INFO <main> ru.senioravanti.vkbot.App#start:71 {
+  "msg": "staring app ..."
+}
+ */
 @Plugin(
     name = "PrettyStructuredLoggingFormatter",
     category = Node.CATEGORY,
@@ -71,11 +76,11 @@ public class PrettyStructuredLoggingFormatter extends AbstractStringLayout {
     }
 
     @Override
-    public String toSerializable(LogEvent event) {
+    public String toSerializable(LogEvent evt) {
         var jsonEntry = new StringBuilder();
-        jsonEntry.append(colorize(AnsiColors.LIGHT_GRAY.getCode(), "[%s]".formatted(LocalDateTime.ofInstant(Instant.ofEpochMilli(event.getTimeMillis()), ZoneId.systemDefault()).format(TIMESTAMP_FORMATTER))));
+        jsonEntry.append(colorize(AnsiColors.LIGHT_GRAY.getCode(), "[%s]".formatted(LocalDateTime.ofInstant(Instant.ofEpochMilli(evt.getTimeMillis()), ZoneId.systemDefault()).format(TIMESTAMP_FORMATTER))));
         jsonEntry.append(" ");
-        var level = event.getLevel().name();
+        var level = evt.getLevel().name();
         var levelColor = switch (level) {
             case "DEBUG" -> AnsiColors.LIGHT_BLUE;
             case "INFO" -> AnsiColors.LIGHT_MAGENTA;
@@ -85,16 +90,16 @@ public class PrettyStructuredLoggingFormatter extends AbstractStringLayout {
         };
         jsonEntry.append(colorize(levelColor.getCode(), level));
         jsonEntry.append(" ");
-        var src = event.getSource();
-        var msg = event.getMessage();
+        var src = evt.getSource();
+        var msg = evt.getMessage();
         var structuredMessage = new LinkedHashMap<String, Object>();
         if (msg instanceof MapMessage<?, ?> mapMessage) {
             structuredMessage.putAll(mapMessage.getData());
         } else {
             structuredMessage.put("msg", msg.getFormattedMessage());
         }
-        structuredMessage.putAll(event.getContextData().toMap());
-        jsonEntry.append(colorize(AnsiColors.GREEN.getCode(), "%s#%s:%d".formatted(src.getClassName(), src.getMethodName(), src.getLineNumber())));
+        structuredMessage.putAll(evt.getContextData().toMap());
+        jsonEntry.append(colorize(AnsiColors.GREEN.getCode(), "<%s> %s#%s:%d".formatted(evt.getThreadName(), src.getClassName(), src.getMethodName(), src.getLineNumber())));
         jsonEntry.append(" ");
         jsonEntry.append(JSON
             .writerWithDefaultPrettyPrinter()
