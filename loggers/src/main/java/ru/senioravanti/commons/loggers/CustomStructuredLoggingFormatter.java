@@ -16,6 +16,7 @@ import java.time.ZoneId;
 import java.time.format.DateTimeFormatter;
 import java.util.LinkedHashMap;
 import java.util.Map;
+import java.util.Optional;
 
 @Plugin(
     name = "CustomStructuredLoggingFormatter",
@@ -41,7 +42,7 @@ public class CustomStructuredLoggingFormatter extends AbstractStringLayout {
 
         logEntry.put("time", LocalDateTime.ofInstant(Instant.ofEpochMilli(evt.getInstant().getEpochMillisecond()), ZoneId.systemDefault()).format(DateTimeFormatter.ISO_LOCAL_DATE_TIME));
         logEntry.put("level", evt.getLevel().name());
-        logEntry.put("thread", evt.getThreadName());
+        logEntry.put("thread", Utils.getThreadName(evt));
 
         var source = evt.getSource();
         Map<String, Object> sourceMap;

@@ -93,7 +93,7 @@ public class PrettyStructuredLoggingFormatter extends AbstractStringLayout {
         jsonEntry.append(" ");
         // context
         var src = evt.getSource();
-        jsonEntry.append(colorize(AnsiColors.GREEN.getCode(), "<%s> %s#%s:%d".formatted(evt.getThreadName(), src.getClassName(), src.getMethodName(), src.getLineNumber())));
+        jsonEntry.append(colorize(AnsiColors.GREEN.getCode(), "<%s> %s#%s:%d".formatted(Utils.getThreadName(evt), src.getClassName(), src.getMethodName(), src.getLineNumber())));
         jsonEntry.append(" ");
         // structured message
         var msg = evt.getMessage();
