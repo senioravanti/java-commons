@@ -1,6 +1,8 @@
 package ru.senioravanti.commons.files;
 
 import org.apache.tika.Tika;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.mime.MimeTypes;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -23,6 +25,17 @@ public class FileUtils {
 
         // Return characters after, but not including, last dot
         return fileString.substring(lastDotIndex + 1);
+    }
+
+    public static String getExtension(String mimeType) {
+        try {
+            return MimeTypes
+                .getDefaultMimeTypes()
+                .forName(mimeType)
+                .getExtension();
+        } catch (MimeTypeException _) {
+            return "";
+        }
     }
 
     public static String guessContentType(InputStream is) {
